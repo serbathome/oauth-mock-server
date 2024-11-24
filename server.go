@@ -23,6 +23,7 @@ type Config struct {
 	AuthHeaderName    string `json:"authHeaderName"`
 	BasicAuthUsername string `json:"basicAuthUsername"`
 	BasicAuthPassword string `json:"basicAuthPassword"`
+	Port              string `json:"port"`
 }
 
 var config Config
@@ -30,8 +31,8 @@ var config Config
 func main() {
 	config = readConfig("appsettings.json")
 	http.HandleFunc("/", authHandler)
-	log.Println("Server running on :8080")
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	log.Println("Server running on ", config.Port)
+	log.Fatal(http.ListenAndServe(config.Port, nil))
 }
 
 func authHandler(w http.ResponseWriter, r *http.Request) {
