@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -26,10 +27,13 @@ type Config struct {
 	Port              string `json:"port"`
 }
 
+var jwksJSON string
+
 var config Config
 
 func main() {
 	config = readConfig("appsettings.json")
+	jwksJSON = getJwksJson(config.JwksURL)
 	http.HandleFunc("/", authHandler)
 	log.Println("Server running on ", config.Port)
 	log.Fatal(http.ListenAndServe(config.Port, nil))
@@ -62,8 +66,8 @@ func validateJWT(r *http.Request) bool {
 	}
 	tokenString := strings.TrimPrefix(authHeader, "Bearer ")
 
-	// Load JWKS: in real app do it once and cache it in the config
-	jwks, err := keyfunc.Get(config.JwksURL, keyfunc.Options{})
+	// Load JWKS: cache it in the config
+	jwks, err := keyfunc.NewJSON([]byte(jwksJSON))
 	if err != nil {
 		log.Printf("Error loading JWKS: %v", err)
 		return false
@@ -131,4 +135,18 @@ func readConfig(filePath string) Config {
 		}
 	}
 	return config
+}
+
+func getJwksJson(jwksURL string) string {
+	resp, err := http.Get(jwksURL)
+	if err != nil {
+		log.Fatalf("Failed to get JWKS from %s.\nError: %s", jwksURL, err.Error())
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		log.Fatalf("Failed to read JWKS response body.\nError: %s", err.Error())
+	}
+	return string(body)
 }
