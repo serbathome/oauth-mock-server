@@ -18,13 +18,14 @@ type AuthResponse struct {
 }
 
 type Config struct {
-	AudienceId        string `json:"audience"`
-	Issuer            string `json:"issuer"`
-	JwksURL           string `json:"jwksUrl"`
-	AuthHeaderName    string `json:"authHeaderName"`
-	BasicAuthUsername string `json:"basicAuthUsername"`
-	BasicAuthPassword string `json:"basicAuthPassword"`
-	Port              string `json:"port"`
+	AudienceId        string   `json:"audience"`
+	Issuer            string   `json:"issuer"`
+	JwksURL           string   `json:"jwksUrl"`
+	AuthHeaderName    string   `json:"authHeaderName"`
+	BasicAuthUsername string   `json:"basicAuthUsername"`
+	BasicAuthPassword string   `json:"basicAuthPassword"`
+	Port              string   `json:"port"`
+	Endpoints         []string `json:"endpoints"`
 }
 
 var jwksJSON string
@@ -34,7 +35,9 @@ var config Config
 func main() {
 	config = readConfig("appsettings.json")
 	jwksJSON = getJwksJson(config.JwksURL)
-	http.HandleFunc("/", authHandler)
+	for _, endpoint := range config.Endpoints {
+		http.HandleFunc(endpoint, authHandler)
+	}
 	log.Println("Server running on ", config.Port)
 	log.Fatal(http.ListenAndServe(config.Port, nil))
 }
