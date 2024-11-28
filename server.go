@@ -26,6 +26,7 @@ type Config struct {
 	BasicAuthPassword string   `json:"basicAuthPassword"`
 	Port              string   `json:"port"`
 	Endpoints         []string `json:"endpoints"`
+	EnableTLS         bool     `json:"enableTls"`
 }
 
 var jwksJSON string
@@ -38,8 +39,13 @@ func main() {
 	for _, endpoint := range config.Endpoints {
 		http.HandleFunc(endpoint, authHandler)
 	}
-	log.Println("Server running on ", config.Port)
-	log.Fatal(http.ListenAndServe(config.Port, nil))
+	if config.EnableTLS {
+		log.Println("Server running with TLS on ", config.Port)
+		log.Fatal(http.ListenAndServeTLS(config.Port, "server.crt", "server.key", nil))
+	} else {
+		log.Println("Server running on ", config.Port)
+		log.Fatal(http.ListenAndServe(config.Port, nil))
+	}
 }
 
 func authHandler(w http.ResponseWriter, r *http.Request) {
